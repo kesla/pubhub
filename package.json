@@ -4,7 +4,7 @@
   "description": "A simple PubSubHubbub server using node.js & leveldb",
   "version": "0.0.0",
   "repository": {
-    "url": "git://github.com/kesla/node-pubhub.git"
+    "url": "git://github.com/kesla/pubhub.git"
   },
   "main": "pubhub.js",
   "scripts": {
@@ -17,5 +17,9 @@
     "levelup": "~0.8.0",
     "request": "~2.21.0"
   },
-  "licence": "MIT"
+  "licence": "MIT",
+  "keywords": [
+    "pubsub",
+    "pubsubhubbub"
+  ]
 }
