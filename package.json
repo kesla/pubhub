@@ -1,0 +1,21 @@
+{
+  "name": "pubhub",
+  "author": "David Björklund <david.bjorklund@gmail.com> (http://davidbjorklund.se)",
+  "description": "A simple PubSubHubbub server using node.js & leveldb",
+  "version": "0.0.0",
+  "repository": {
+    "url": "git://github.com/kesla/node-pubhub.git"
+  },
+  "main": "pubhub.js",
+  "scripts": {
+    "test": "tap test/*-test.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tap": "~0.4.0",
+    "memdown": "~0.1.1",
+    "levelup": "~0.8.0",
+    "request": "~2.21.0"
+  },
+  "licence": "MIT"
+}
