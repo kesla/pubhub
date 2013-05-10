@@ -1,4 +1,4 @@
-# pubhub
+# pubhub[![build status](https://secure.travis-ci.org/kesla/node-pubhub.png)](http://travis-ci.org/kesla/node-pubhub)
 
 A simple PubSubHubbub server using node.js & leveldb
 
