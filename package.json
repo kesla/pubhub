@@ -12,10 +12,10 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "tap": "~0.4.0",
     "memdown": "~0.1.1",
     "levelup": "~0.8.0",
-    "request": "~2.21.0"
+    "request": "~2.21.0",
+    "tape": "~1.0.2"
   },
   "licence": "MIT",
   "keywords": [
