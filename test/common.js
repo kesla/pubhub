@@ -18,9 +18,9 @@ common.setup = function(t) {
 
   server = http.createServer(hub.dispatch.bind(hub))
 
-  server.once('listening', function() {
-    port = this.address().port
-    hubUrl = 'http://localhost:' + port
+  common.server.once('listening', function() {
+    var port = this.address().port
+      , hubUrl = 'http://localhost:' + port
 
     common.hubRequest = function(parameters, callback) {
       request(
