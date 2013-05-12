@@ -5,7 +5,7 @@ var test = require('tape')
 test('setup', common.setup.bind(common))
 
 test('subscription request', function(t) {
-  t.plan(4)
+  t.plan(8)
 
   common.hubRequest(
       {
@@ -13,7 +13,8 @@ test('subscription request', function(t) {
         , 'hub.topic': common.topicUrl
       }
     , function(err, res, data) {
-        t.notEqual(res.statusCode, 200, 'hub.callback is required')
+        t.equal(res.statusCode, 400, 'hub.callback is required')
+        t.equal(data, 'hub.callback is a required parameter', 'correct error message')
       }
   )
 
@@ -23,7 +24,8 @@ test('subscription request', function(t) {
         , 'hub.topic': common.topicUrl
       }
     , function(err, res, data) {
-        t.notEqual(res.statusCode, 200, 'hub.mode is required')
+        t.equal(res.statusCode, 400, 'hub.mode is required')
+        t.equal(data, 'hub.mode is a required parameter', 'correct error message')
       }
   )
 
@@ -33,7 +35,8 @@ test('subscription request', function(t) {
         , 'hub.callback': common.callbackUrl
       }
     , function(err, res, data) {
-        t.notEqual(res.statusCode, 200, 'hub.topic is required')
+        t.equal(res.statusCode, 400, 'hub.topic is required')
+        t.equal(data, 'hub.topic is a required parameter', 'correct error message')
       }
   )
 
@@ -44,7 +47,8 @@ test('subscription request', function(t) {
         , 'hub.topic': common.topicUrl
       }
     , function(err, res, data) {
-        t.notEqual(res.statusCode, 200, 'hub.mode should be subscribe or unsubscribe')
+        t.equal(res.statusCode, 400, 'hub.mode should be subscribe or unsubscribe')
+        t.equal(data, 'hub.mode must be "subscribe" or "unsubscribe"', 'correct error message')
       }
   )
 })

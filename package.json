@@ -10,7 +10,9 @@
   "scripts": {
     "test": "tape test/*-test.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "endpoint": "~0.4.2"
+  },
   "devDependencies": {
     "memdown": "~0.1.1",
     "levelup": "~0.8.0",
