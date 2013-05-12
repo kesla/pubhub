@@ -1,12 +1,17 @@
-var common = module.exports
-  , http = require('http')
-  , pubhub = require('../pubhub')
-  , server
+var http = require('http')
+  , qs = require('querystring')
+
   , MemDOWN = require('memdown')
   , levelup = require('levelup')
+  , request = require('request')
+
+  , pubhub = require('../pubhub')
+
+  , common = module.exports
   , factory = function (location) { return new MemDOWN(location) }
   , db = levelup('/does/not/matter', { db: factory })
-  , request = require('request')
+  , server
+
 
 common.setup = function(t) {
   var hub = pubhub(db)
@@ -16,15 +21,21 @@ common.setup = function(t) {
   server.once('listening', function() {
     port = this.address().port
     hubUrl = 'http://localhost:' + port
-    common.hubRequest = request.defaults({
-        jar: false,
-        headers: {
-          'content-type': 'application/x-www-form-urlencoded'
-        },
-        url: hubUrl,
-        method: 'POST'
-      })
 
+    common.hubRequest = function(parameters, callback) {
+      request(
+          {
+              url: hubUrl
+            , method: 'POST'
+            , headers: {
+                'content-type': 'application/x-www-form-urlencoded'
+              }
+            , body: qs.stringify(parameters)
+            , jar: false
+          }
+        , callback
+      )
+    }
 
     // TODO: These should be real urls, pointing to places that actually mean something
     common.topicUrl = 'http://topic.com'
