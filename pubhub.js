@@ -20,8 +20,22 @@ function PubHub(db) {
   this.db = db
 }
 
+PubHub.prototype._parseParameters = function(buffer) {
+  var str = buffer.toString()
+    , rawParams = qs.parse(str)
+    , parameters = {}
+
+  Object.keys(rawParams).forEach(function(key) {
+    if (key.slice(0, 'hub.'.length) === 'hub.')
+      parameters[key.slice('hub.'.length)] = rawParams[key]
+  })
+  return parameters
+}
+
 PubHub.prototype._validateParameters = function(parameters) {
-  var requiredParameters = ['hub.callback', 'hub.mode', 'hub.topic']
+  // requiredParameters are without the "hub."-prefix since that's removed
+  // when the parameters are parsed
+  var requiredParameters = ['callback', 'mode', 'topic']
     , validModes = ['subscribe', 'unsubscribe']
     , validSchemes = ['http:', 'https:']
     , param
@@ -35,26 +49,26 @@ PubHub.prototype._validateParameters = function(parameters) {
 
     if (!parameters[param])
       return new ValidationError(
-        param + ' is a required parameter'
+        'hub.' + param + ' is a required parameter'
       )
   }
 
   // check that the mode is correct
   for(i = 0; i < validModes.length; ++i) {
-    if (validModes.indexOf(parameters['hub.mode']) === -1)
+    if (validModes.indexOf(parameters.mode) === -1)
       return new ValidationError(
         'hub.mode must be "subscribe" or "unsubscribe"'
       )
   }
 
   // check that the callback & topic-urls have correct scheme/protocol
-  callbackUrlObj = url.parse(parameters['hub.callback'])
+  callbackUrlObj = url.parse(parameters.callback)
   if (validSchemes.indexOf(callbackUrlObj.protocol) === -1)
     return new ValidationError(
       'hub.callback: "' + callbackUrlObj.protocol + '" is not a valid scheme'
     )
 
-  topicUrlObj = url.parse(parameters['hub.topic'])
+  topicUrlObj = url.parse(parameters.topic)
   if (validSchemes.indexOf(topicUrlObj.protocol) === -1)
     return new ValidationError(
       'hub.topic: "' + topicUrlObj.protocol + '" is not a valid scheme'
@@ -76,7 +90,7 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
 
         var parameters
         if (!err) {
-          parameters = qs.parse(buffer.toString())
+          parameters = self._parseParameters(buffer)
           err = self._validateParameters(parameters)
         }
 
