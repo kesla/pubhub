@@ -5,7 +5,7 @@ var test = require('tape')
 test('setup', common.setup.bind(common))
 
 test('subscription request', function(t) {
-  t.plan(13)
+  t.plan(15)
 
   common.server.on('request', common.hub.dispatch.bind(common.hub))
 
@@ -61,7 +61,7 @@ test('subscription request', function(t) {
         , 'hub.topic': 'https://topic.com'
       }
     , function(err, res, data) {
-        t.notEqual(res.statusCode, 400, 'hub.callback & hub.topic can have a https-scheme')
+        t.equal(res.statusCode, 202, 'hub.callback & hub.topic can have a https-scheme')
       }
   )
 
@@ -87,6 +87,18 @@ test('subscription request', function(t) {
         t.equal(res.statusCode, 400, 'hub.callback must have http or https-scheme')
         t.equal(data, 'hub.topic: "htp:" is not a valid scheme')
       }
+  )
+
+  common.hubRequest(
+      {
+          'hub.mode': 'subscribe'
+        , 'hub.callback': common.callbackUrl
+        , 'hub.topic': common.topicUrl
+      }
+    , function(err, res, data) {
+      t.equal(res.statusCode, 202, 'correct statusCode when params are correct')
+      t.equal(data, '')
+    }
   )
 })
 

@@ -96,8 +96,10 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
 
         if (err)
           errorHandler(err)
-        else
+        else {
+          res.writeHead(202)
           res.end()
+        }
       })
   )
 }
