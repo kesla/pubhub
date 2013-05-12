@@ -8,7 +8,7 @@
   },
   "main": "pubhub.js",
   "scripts": {
-    "test": "tap test/*-test.js"
+    "test": "tape test/*-test.js"
   },
   "dependencies": {},
   "devDependencies": {
