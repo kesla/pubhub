@@ -10,13 +10,12 @@ var http = require('http')
   , common = module.exports
   , factory = function (location) { return new MemDOWN(location) }
   , db = levelup('/does/not/matter', { db: factory })
-  , server
 
 
 common.setup = function(t) {
-  var hub = pubhub(db)
+  common.hub = pubhub(db)
 
-  server = http.createServer(hub.dispatch.bind(hub))
+  common.server = http.createServer().listen(0)
 
   common.server.once('listening', function() {
     var port = this.address().port
@@ -43,14 +42,12 @@ common.setup = function(t) {
 
     t.end()
   })
-
-  server.listen(0)
 }
 
 common.teardown = function(t) {
-  if (server) {
-    server.unref()
-    server.close()
+  if (common.server) {
+    common.server.unref()
+    common.server.close()
   }
   t.end()
 }

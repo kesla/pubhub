@@ -42,12 +42,14 @@ PubHub.prototype._validateParameters = function(parameters) {
   }
 }
 
-PubHub.prototype.dispatch = function(req, res) {
+PubHub.prototype.dispatch = function(req, res, errorHandler) {
   var self = this
-    , errorHandler = function(err) {
-        res.writeHead(err.statusCode || 500)
-        res.end(err.message)
-      }
+
+  if (typeof(errorHandler) !== 'function')
+    errorHandler = function(err) {
+      res.writeHead(err.statusCode || 500)
+      res.end(err.message)
+    }
 
   req.pipe(
       endpoint(function(err, buffer) {

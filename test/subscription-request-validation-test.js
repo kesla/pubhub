@@ -7,6 +7,8 @@ test('setup', common.setup.bind(common))
 test('subscription request', function(t) {
   t.plan(8)
 
+  common.server.on('request', common.hub.dispatch.bind(common.hub))
+
   common.hubRequest(
       {
           'hub.mode': 'subscribe'
