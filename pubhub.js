@@ -20,22 +20,22 @@ function PubHub(db) {
   this.db = db
 }
 
-PubHub.prototype._parseParameters = function(buffer) {
+PubHub.prototype._parseParams = function(buffer) {
   var str = buffer.toString()
     , rawParams = qs.parse(str)
-    , parameters = {}
+    , params = {}
 
   Object.keys(rawParams).forEach(function(key) {
     if (key.slice(0, 'hub.'.length) === 'hub.')
-      parameters[key.slice('hub.'.length)] = rawParams[key]
+      params[key.slice('hub.'.length)] = rawParams[key]
   })
-  return parameters
+  return params
 }
 
-PubHub.prototype._validateParameters = function(parameters) {
-  // requiredParameters are without the "hub."-prefix since that's removed
-  // when the parameters are parsed
-  var requiredParameters = ['callback', 'mode', 'topic']
+PubHub.prototype._validateParams = function(params) {
+  // requiredParams are without the "hub."-prefix since that's removed
+  // when the params are parsed
+  var requiredParams = ['callback', 'mode', 'topic']
     , validModes = ['subscribe', 'unsubscribe']
     , validSchemes = ['http:', 'https:']
     , param
@@ -43,11 +43,11 @@ PubHub.prototype._validateParameters = function(parameters) {
     , callbackUrlObj
     , topicUrlObj
 
-  // Check that all required parameters are present
-  for(i = 0; i < requiredParameters.length; ++i) {
-    param = requiredParameters[i]
+  // Check that all required params are present
+  for(i = 0; i < requiredParams.length; ++i) {
+    param = requiredParams[i]
 
-    if (!parameters[param])
+    if (!params[param])
       return new ValidationError(
         'hub.' + param + ' is a required parameter'
       )
@@ -55,20 +55,20 @@ PubHub.prototype._validateParameters = function(parameters) {
 
   // check that the mode is correct
   for(i = 0; i < validModes.length; ++i) {
-    if (validModes.indexOf(parameters.mode) === -1)
+    if (validModes.indexOf(params.mode) === -1)
       return new ValidationError(
         'hub.mode must be "subscribe" or "unsubscribe"'
       )
   }
 
   // check that the callback & topic-urls have correct scheme/protocol
-  callbackUrlObj = url.parse(parameters.callback)
+  callbackUrlObj = url.parse(params.callback)
   if (validSchemes.indexOf(callbackUrlObj.protocol) === -1)
     return new ValidationError(
       'hub.callback: "' + callbackUrlObj.protocol + '" is not a valid scheme'
     )
 
-  topicUrlObj = url.parse(parameters.topic)
+  topicUrlObj = url.parse(params.topic)
   if (validSchemes.indexOf(topicUrlObj.protocol) === -1)
     return new ValidationError(
       'hub.topic: "' + topicUrlObj.protocol + '" is not a valid scheme'
@@ -88,10 +88,10 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
   req.pipe(
       endpoint(function(err, buffer) {
 
-        var parameters
+        var params
         if (!err) {
-          parameters = self._parseParameters(buffer)
-          err = self._validateParameters(parameters)
+          params = self._parseParams(buffer)
+          err = self._validateParams(params)
         }
 
         if (err)
