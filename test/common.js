@@ -8,12 +8,16 @@ var http = require('http')
   , pubhub = require('../pubhub')
 
   , common = module.exports
-  , factory = function (location) { return new MemDOWN(location) }
-  , db = levelup('/does/not/matter', { db: factory })
+  , dbFactory = function (location) { return new MemDOWN(location) }
 
+common.setup = function(t, opts) {
+  if (!opts)
+    opts = {}
 
-common.setup = function(t) {
-  common.hub = pubhub(db)
+  if (!opts.db)
+    opts.db = levelup('/does/not/matter', { db : dbFactory} )
+
+  common.hub = pubhub(opts)
 
   common.server = http.createServer().listen(0)
 

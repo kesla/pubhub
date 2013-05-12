@@ -13,11 +13,11 @@ function ValidationError(message) {
 }
 util.inherits(ValidationError, Error)
 
-function PubHub(db) {
+function PubHub(opts) {
   if (!(this instanceof PubHub))
-    return new PubHub(db)
+    return new PubHub(opts)
 
-  this.db = db
+  this.db = opts.db
 }
 
 PubHub.prototype._parseParams = function(buffer) {
