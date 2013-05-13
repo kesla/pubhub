@@ -8,7 +8,7 @@
   },
   "main": "pubhub.js",
   "scripts": {
-    "test": "tape test/*-test.js"
+    "test": "tap test/*-test.js"
   },
   "dependencies": {
     "endpoint": "~0.4.2"
@@ -17,7 +17,7 @@
     "memdown": "~0.1.1",
     "levelup": "~0.8.0",
     "request": "~2.21.0",
-    "tape": "~1.0.2"
+    "tap": "~0.4.2"
   },
   "licence": "MIT",
   "keywords": [

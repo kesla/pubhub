@@ -1,5 +1,5 @@
 var qs = require('querystring')
-  , test = require('tape')
+  , test = require('tap').test
 
   , common = require('./common')
 
