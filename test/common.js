@@ -11,6 +11,8 @@ var http = require('http')
   , dbFactory = function (location) { return new MemDOWN(location) }
 
 common.setup = function(t, opts) {
+  t.plan(2)
+
   if (!opts)
     opts = {}
 
@@ -42,9 +44,16 @@ common.setup = function(t, opts) {
 
     // TODO: These should be real urls, pointing to places that actually mean something
     common.topicUrl = 'http://topic.com'
-    common.callbackUrl = 'http://callback.com'
 
-    t.end()
+    t.ok(true, 'server started')
+  })
+
+  common.callbackServer = http.createServer().listen(0)
+
+  common.callbackServer.once('listening', function() {
+    common.callbackUrl = 'http://localhost:' + this.address().port + '/callback'
+
+    t.ok(true, 'callback-server started')
   })
 }
 
@@ -52,6 +61,11 @@ common.teardown = function(t) {
   if (common.server) {
     common.server.unref()
     common.server.close()
+  }
+
+  if (common.callbackServer) {
+    common.callbackServer.unref()
+    common.callbackServer.close()
   }
   t.end()
 }

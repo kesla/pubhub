@@ -1,4 +1,5 @@
-var qs = require('querystring')
+var http = require('http')
+  , qs = require('querystring')
   , url = require('url')
   , util = require('util')
 
@@ -18,6 +19,12 @@ function PubHub(opts) {
     return new PubHub(opts)
 
   this.db = opts.db
+  this.acceptor = opts.acceptor || this._defaultAcceptor
+}
+
+// the default acceptor that accepts all subscriptions as the default action
+PubHub.prototype._defaultAcceptor = function(params, callback) {
+  callback(null, true)
 }
 
 PubHub.prototype._parseParams = function(buffer) {
@@ -76,6 +83,21 @@ PubHub.prototype._validateParams = function(params) {
 
 }
 
+PubHub.prototype._denySubscription = function(params, reason) {
+  var callbackUrlParts = params.callback.split('?')
+    , callbackQuery = qs.parse(callbackUrlParts[1])
+    , callbackBaseUrl = callbackUrlParts[0]
+    , callbackUrl
+
+  callbackQuery['hub.mode'] = 'denied'
+  callbackQuery['hub.topic'] = params.topic
+
+  callbackUrl = callbackBaseUrl + '?' + qs.stringify(callbackQuery)
+
+  // notify the subscriber of the failure
+  http.get(callbackUrl)
+}
+
 PubHub.prototype.dispatch = function(req, res, errorHandler) {
   var self = this
 
@@ -99,6 +121,13 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
         else {
           res.writeHead(202)
           res.end()
+
+          self.acceptor(params, function(err, accepts) {
+            if (err)
+              errorHandler(err)
+            else if (!accepts)
+              self._denySubscription(params)
+          })
         }
       })
   )
