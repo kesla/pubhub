@@ -1,9 +1,9 @@
-var http = require('http')
-  , qs = require('querystring')
+var qs = require('querystring')
   , url = require('url')
   , util = require('util')
 
   , endpoint = require('endpoint')
+  , request = require('request')
 
 function ValidationError(message) {
   Error.call(this)
@@ -20,6 +20,7 @@ function PubHub(opts) {
 
   this.db = opts.db
   this.acceptor = opts.acceptor || this._defaultAcceptor
+  this.leaseSeconds = opts.leaseSeconds || 12345;
 
   // REQUIRED_PARAMS are without the "hub."-prefix
   this.REQUIRED_PARAMS = ['callback', 'mode', 'topic']
@@ -95,7 +96,25 @@ PubHub.prototype._denySubscription = function(params, reason) {
   callbackUrl = callbackBaseUrl + '?' + qs.stringify(callbackQuery)
 
   // notify the subscriber of the failure
-  http.get(callbackUrl)
+  request.get(callbackUrl, function(err) {})
+}
+
+PubHub.prototype._verifyIntent = function(params) {
+  var callbackUrlParts = params.callback.split('?')
+    , callbackQuery = qs.parse(callbackUrlParts[1])
+    , callbackBaseUrl = callbackUrlParts[0]
+
+  callbackQuery['hub.mode'] = params.mode
+  callbackQuery['hub.topic'] = params.topic
+
+  callbackQuery['hub.challenge'] = Math.random().toString(16).slice(2)
+  callbackQuery['hub.lease_seconds'] = this.leaseSeconds
+
+  console.log(callbackBaseUrl + '?' + qs.stringify(callbackQuery))
+
+  request.get(callbackBaseUrl +   '?' + qs.stringify(callbackQuery)).once('error', function(err) {
+    // TODO: Don't just ignore this error - perhaps retry a little bit later
+  })
 }
 
 PubHub.prototype.dispatch = function(req, res, errorHandler) {
@@ -125,7 +144,9 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
           self.acceptor(params, function(err, accepts) {
             if (err)
               errorHandler(err)
-            else if (!accepts)
+            else if (accepts)
+              self._verifyIntent(params)
+            else
               self._denySubscription(params)
           })
         }

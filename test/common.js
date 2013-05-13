@@ -1,4 +1,7 @@
-var http = require('http')
+var fs = require('fs')
+  , http = require('http')
+  , https = require('https')
+  , path = require('path')
   , qs = require('querystring')
 
   , MemDOWN = require('memdown')
@@ -11,7 +14,7 @@ var http = require('http')
   , dbFactory = function (location) { return new MemDOWN(location) }
 
 common.setup = function(t, opts) {
-  t.plan(2)
+  t.plan(3)
 
   if (!opts)
     opts = {}
@@ -48,13 +51,31 @@ common.setup = function(t, opts) {
     t.ok(true, 'server started')
   })
 
-  common.callbackServer = http.createServer().listen(0)
+  common.callbackServers = {
+      http: http.createServer().listen(0)
+    , https: https.createServer({
+            key: fs.readFileSync(path.join(__dirname, 'fixtures/server.key'))
+          , cert: fs.readFileSync(path.join(__dirname, 'fixtures/server.crt'))
+        }).listen(0)
+  }
 
-  common.callbackServer.once('listening', function() {
-    common.callbackUrl = 'http://localhost:' + this.address().port + '/callback'
+  common.callbackUrls = {
+      http: ''
+    , https: ''
+  }
 
-    t.ok(true, 'callback-server started')
+  common.callbackServers.http.once('listening', function() {
+    common.callbackUrls.http = 'http://localhost:' + this.address().port + '/callback'
+
+    t.ok(true, 'callback http-server started')
   })
+
+  common.callbackServers.https.once('listening', function() {
+    common.callbackUrls.https = 'https://localhost:' + this.address().port + '/callback'
+
+    t.ok(true, 'callback https-server started')
+  })
+
 }
 
 common.teardown = function(t) {
@@ -63,9 +84,16 @@ common.teardown = function(t) {
     common.server.close()
   }
 
-  if (common.callbackServer) {
-    common.callbackServer.unref()
-    common.callbackServer.close()
+  if (common.callbackServers.http) {
+    common.callbackServers.http.unref()
+    common.callbackServers.http.close()
   }
+
+  if (common.callbackServers.https) {
+    common.callbackServers.https.unref()
+    common.callbackServers.https.close()
+  }
+
+
   t.end()
 }
