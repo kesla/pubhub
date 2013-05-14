@@ -45,42 +45,42 @@ PubHub.prototype._parseParams = function(buffer) {
 }
 
 PubHub.prototype._validateParams = function(params) {
-  var param
-    , i
-    , callbackUrlObj
-    , topicUrlObj
+  var err = null
+    , callbackScheme
+    , topicScheme
 
   // Check that all required params are present
-  for(i = 0; i < this.REQUIRED_PARAMS.length; ++i) {
-    param = this.REQUIRED_PARAMS[i]
-
-    if (!params[param])
-      return new ValidationError(
-        'hub.' + param + ' is a required parameter'
+  this.REQUIRED_PARAMS.forEach(function(requiredParam) {
+    if (!err && !params[requiredParam])
+      err = new ValidationError(
+        'hub.' + requiredParam + ' is a required parameter'
       )
-  }
+  })
 
   // check that the mode is correct
-  for(i = 0; i < this.VALID_MODES.length; ++i) {
-    if (this.VALID_MODES.indexOf(params.mode) === -1)
-      return new ValidationError(
-        'hub.mode must be "subscribe" or "unsubscribe"'
+  if (!err && this.VALID_MODES.indexOf(params.mode) === -1)
+    err = new ValidationError(
+      'hub.mode must be "subscribe" or "unsubscribe"'
+    )
+
+  // check that the callback & topic-urls have correct scheme/protocol
+  if (!err) {
+    callbackScheme = url.parse(params.callback).protocol
+    if (this.VALID_SCHEMES.indexOf(callbackScheme) === -1)
+      err = new ValidationError(
+        'hub.callback: "' + callbackScheme + '" is not a valid scheme'
       )
   }
 
-  // check that the callback & topic-urls have correct scheme/protocol
-  callbackUrlObj = url.parse(params.callback)
-  if (this.VALID_SCHEMES.indexOf(callbackUrlObj.protocol) === -1)
-    return new ValidationError(
-      'hub.callback: "' + callbackUrlObj.protocol + '" is not a valid scheme'
-    )
+  if (!err) {
+    topicScheme = url.parse(params.topic).protocol
+    if (this.VALID_SCHEMES.indexOf(topicScheme) === -1)
+      err = new ValidationError(
+        'hub.topic: "' + topicScheme + '" is not a valid scheme'
+      )
+  }
 
-  topicUrlObj = url.parse(params.topic)
-  if (this.VALID_SCHEMES.indexOf(topicUrlObj.protocol) === -1)
-    return new ValidationError(
-      'hub.topic: "' + topicUrlObj.protocol + '" is not a valid scheme'
-    )
-
+  return err
 }
 
 PubHub.prototype._denySubscription = function(params, reason) {
