@@ -1,4 +1,5 @@
-var qs = require('querystring')
+var crypto = require('crypto')
+  , qs = require('querystring')
   , url = require('url')
   , util = require('util')
 
@@ -99,6 +100,10 @@ PubHub.prototype._denySubscription = function(params, reason) {
   request.get(callbackUrl, function(err) {})
 }
 
+PubHub.prototype._randomString = function() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
 PubHub.prototype._verifyIntent = function(params) {
   var callbackUrlParts = params.callback.split('?')
     , callbackQuery = qs.parse(callbackUrlParts[1])
@@ -107,7 +112,7 @@ PubHub.prototype._verifyIntent = function(params) {
   callbackQuery['hub.mode'] = params.mode
   callbackQuery['hub.topic'] = params.topic
 
-  callbackQuery['hub.challenge'] = Math.random().toString(16).slice(2)
+  callbackQuery['hub.challenge'] = this._randomString()
   callbackQuery['hub.lease_seconds'] = this.leaseSeconds
 
   console.log(callbackBaseUrl + '?' + qs.stringify(callbackQuery))
