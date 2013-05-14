@@ -49,4 +49,35 @@ test('verify subscribe intent', function(t) {
   )
 })
 
+test('verify unsubscribe intent', function(t) {
+  var callbackUrl = common.callbackUrls.http + '?hello=world'
+    , challenge
+
+  common.callbackServers.http.once('request', function(req, res) {
+    var query = qs.parse(req.url.split('?')[1])
+
+    challenge = query['hub.challenge']
+
+    t.equal(query['hub.mode'], 'unsubscribe', 'hub.mode is "unsubscribe"')
+    t.equal(query['hub.topic'], common.topicUrl, 'hub.topic is original topic')
+    t.type(challenge, 'string', 'hub challenge is set')
+    t.equal(query['hello'], 'world', 'custom queries are preserved')
+
+    res.end(challenge)
+
+    t.end()
+  })
+
+  common.hubRequest(
+      {
+          'hub.mode': 'unsubscribe'
+        , 'hub.callback': callbackUrl
+        , 'hub.topic': common.topicUrl
+      }
+    , function(err, res) {
+      t.equal(res.statusCode, 202, 'Correct status code')
+    }
+  )
+})
+
 test('teardown', common.teardown.bind(common))
