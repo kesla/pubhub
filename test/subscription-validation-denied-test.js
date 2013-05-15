@@ -14,8 +14,8 @@ test('setup', function(t) {
 })
 
 test('subscription denial', function(t) {
-  var callbackUrl = common.callbackUrl + '?hello=world'
-  common.callbackServer.once('request', function(req, res) {
+  var callbackUrl = common.callbackUrls.http + '?hello=world'
+  common.callbackServers.http.once('request', function(req, res) {
     res.end()
 
     var query = qs.parse(req.url.split('?')[1])

@@ -9,6 +9,8 @@ test('subscription request', function(t) {
 
   common.server.on('request', common.hub.dispatch.bind(common.hub))
 
+  console.log(common.callbackServers.http.address().port)
+
   common.hubRequest(
       {
           'hub.mode': 'subscribe'
@@ -22,7 +24,7 @@ test('subscription request', function(t) {
 
   common.hubRequest(
       {
-          'hub.callback': common.callbackUrl
+          'hub.callback': common.callbackUrls.http
         , 'hub.topic': common.topicUrl
       }
     , function(err, res, data) {
@@ -34,7 +36,7 @@ test('subscription request', function(t) {
   common.hubRequest(
       {
           'hub.mode': 'subscribe'
-        , 'hub.callback': common.callbackUrl
+        , 'hub.callback': common.callbackUrls.http
       }
     , function(err, res, data) {
         t.equal(res.statusCode, 400, 'hub.topic is required')
@@ -45,7 +47,7 @@ test('subscription request', function(t) {
   common.hubRequest(
       {
           'hub.mode': 'wrong'
-        , 'hub.callback': common.callbackUrl
+        , 'hub.callback': common.callbackUrls.http
         , 'hub.topic': common.topicUrl
       }
     , function(err, res, data) {
@@ -57,7 +59,7 @@ test('subscription request', function(t) {
   common.hubRequest(
       {
           'hub.mode': 'subscribe'
-        , 'hub.callback': 'https://callback.com'
+        , 'hub.callback': common.callbackUrls.https
         , 'hub.topic': 'https://topic.com'
       }
     , function(err, res, data) {
@@ -77,10 +79,11 @@ test('subscription request', function(t) {
       }
   )
 
+
   common.hubRequest(
       {
           'hub.mode': 'subscribe'
-        , 'hub.callback': common.callbackUrl
+        , 'hub.callback': common.callbackUrls.http
         , 'hub.topic': 'htp://topic.com'
       }
     , function(err, res, data) {
@@ -92,7 +95,7 @@ test('subscription request', function(t) {
   common.hubRequest(
       {
           'hub.mode': 'subscribe'
-        , 'hub.callback': common.callbackUrl
+        , 'hub.callback': common.callbackUrls.http
         , 'hub.topic': common.topicUrl
       }
     , function(err, res, data) {
