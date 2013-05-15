@@ -9,8 +9,6 @@ test('subscription request', function(t) {
 
   common.server.on('request', common.hub.dispatch.bind(common.hub))
 
-  console.log(common.callbackServers.http.address().port)
-
   common.hubRequest(
       {
           'hub.mode': 'subscribe'

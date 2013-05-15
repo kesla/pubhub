@@ -115,8 +115,6 @@ PubHub.prototype._verifyIntent = function(params) {
   callbackQuery['hub.challenge'] = this._randomString()
   callbackQuery['hub.lease_seconds'] = this.leaseSeconds
 
-  console.log(callbackBaseUrl + '?' + qs.stringify(callbackQuery))
-
   request.get(callbackBaseUrl +   '?' + qs.stringify(callbackQuery)).once('error', function(err) {
     // TODO: Don't just ignore this error - perhaps retry a little bit later
   })
