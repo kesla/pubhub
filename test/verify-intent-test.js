@@ -6,7 +6,7 @@ var qs = require('querystring')
 test('setup', function(t) {
   common.setup(t, {
       acceptor: function(params, callback) {
-        // don't accept any subscription requests
+        // accept any subscription requests
         callback(null, true)
       }
   })
