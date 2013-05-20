@@ -131,8 +131,8 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
 
   req.pipe(
       endpoint(function(err, buffer) {
-
         var params
+
         if (!err) {
           params = self._parseParams(buffer)
           err = self._validateParams(params)
@@ -141,16 +141,17 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
         if (err)
           errorHandler(err)
         else {
-          res.writeHead(202)
-          res.end()
-
           self.acceptor(params, function(err, accepts) {
             if (err)
               errorHandler(err)
-            else if (accepts)
-              self._verifyIntent(params)
-            else
-              self._denySubscription(params)
+            else {
+              res.writeHead(202)
+              res.end()
+
+              if (accepts)
+                self._verifyIntent(params)
+              else
+                self._denySubscription(params)}
           })
         }
       })
