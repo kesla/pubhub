@@ -5,6 +5,7 @@ var crypto = require('crypto')
 
   , endpoint = require('endpoint')
   , request = require('request')
+  , sublevel = require('level-sublevel')
 
 function ValidationError(message) {
   Error.call(this)
@@ -20,6 +21,7 @@ function PubHub(opts) {
     return new PubHub(opts)
 
   this.db = opts.db
+  sublevel(this.db)
   this.acceptor = opts.acceptor || this._defaultAcceptor
   this.leaseSeconds = opts.leaseSeconds || 12345;
 
@@ -104,20 +106,28 @@ PubHub.prototype._randomString = function() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-PubHub.prototype._verifyIntent = function(params) {
+PubHub.prototype._verifyIntent = function(params, callback) {
   var callbackUrlParts = params.callback.split('?')
     , callbackQuery = qs.parse(callbackUrlParts[1])
     , callbackBaseUrl = callbackUrlParts[0]
+    , challenge = this._randomString()
 
   callbackQuery['hub.mode'] = params.mode
   callbackQuery['hub.topic'] = params.topic
 
-  callbackQuery['hub.challenge'] = this._randomString()
+  callbackQuery['hub.challenge'] = challenge
   callbackQuery['hub.lease_seconds'] = this.leaseSeconds
 
-  request.get(callbackBaseUrl +   '?' + qs.stringify(callbackQuery)).once('error', function(err) {
-    // TODO: Don't just ignore this error - perhaps retry a little bit later
-  })
+  request.get(
+        callbackBaseUrl +   '?' + qs.stringify(callbackQuery)
+      , function(err, res, data) {
+          if (!err && data !== challenge)
+            err = new Error('Wrong challenge from callback')
+
+          callback(err)
+        }
+    )
+    .once('error', callback)
 }
 
 PubHub.prototype.dispatch = function(req, res, errorHandler) {
@@ -149,13 +159,101 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
               res.end()
 
               if (accepts)
-                self._verifyIntent(params)
+                self._verifyIntent(params, function(err) {
+                  // TODO: report if there's an error here somehow
+                  if (!err) {
+                    if (params.mode === 'subscribe')
+                      self._addCallbackUrl(
+                          params.topic
+                        , params.callback
+                        , function(err) {
+                          if (err) {
+                            self._callbackUrls(params.topic, function(err, callbackUrls) {
+                              console.log(callbackUrls)
+                            })
+                            // TODO: Do something if there's an error
+                          }
+                        }
+                      )
+                  }
+                })
               else
-                self._denySubscription(params)}
+                self._denySubscription(params)
+            }
           })
         }
       })
   )
+}
+
+PubHub.prototype._addCallbackUrl = function(topicUrl, callbackUrl, callback) {
+  var self = this
+
+  // TODO: use something like level-update to update metadata regarding a
+  //    subscription - at least add createdAt
+  // TODO: care about least_seconds, most probably by using level-ttl
+
+  this.db.sublevel(topicUrl)
+    .put(
+        callbackUrl
+      , JSON.stringify({
+            updatedAt: (new Date).toJSON().slice(0, 19)
+        })
+      , callback
+  )
+}
+
+PubHub.prototype._callbackUrls = function(topicUrl, callback) {
+  var callbackUrls = []
+
+  this.db.sublevel(topicUrl).createReadStream()
+    .on('data', function(obj) {
+        callbackUrls.push(obj.key)
+      })
+    .once('end', function() {
+        callback(null, callbackUrls)
+      })
+    .once('error', function(err) {
+      callback(err)
+    })
+}
+
+PubHub.prototype.distribute = function(topicUrl, contentType, content, callback) {
+  var self = this
+  this._callbackUrls(topicUrl, function(err, callbackUrls) {
+    var finished = false
+      , finish = function(err) {
+        console.log('calling finish')
+        if (!finished) {
+          if (err) {
+            finished = true
+            callback(err)
+          } else {
+            active = active - 1
+            if (active < 1) {
+              callback(null)
+            }
+          }
+        }
+      }
+      , active
+
+    if (err)
+      callback(err)
+    else {
+      active = callbackUrls.length
+      callbackUrls.forEach(function(callbackUrl) {
+        request.post(
+            callbackUrl
+          , {
+              headers: { 'content-type': contentType}
+            , body: content
+            }
+          , finish
+        )
+      })
+    }
+  })
 }
 
 module.exports = PubHub
