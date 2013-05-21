@@ -10,7 +10,10 @@ test('setup', function(t) {
         callback(null, true)
       }
   })
-  common.server.on('request', common.hub.dispatch.bind(common.hub))
+
+  common.server.on('request', function(req, res) {
+    common.hub.dispatch(req, res)
+  })
 })
 
 test('verify subscribe intent', function(t) {

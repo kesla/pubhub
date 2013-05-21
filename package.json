@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "endpoint": "~0.4.2",
-    "request": "~2.21.0"
+    "request": "~2.21.0",
+    "http-link": "git://github.com/kesla/http-link.git#stringify"
   },
   "devDependencies": {
     "memdown": "~0.1.1",

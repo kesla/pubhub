@@ -6,6 +6,7 @@ var crypto = require('crypto')
   , endpoint = require('endpoint')
   , request = require('request')
   , sublevel = require('level-sublevel')
+  , stringifyLink = require('http-link').stringify
 
 function ValidationError(message) {
   Error.call(this)
@@ -24,6 +25,7 @@ function PubHub(opts) {
   sublevel(this.db)
   this.acceptor = opts.acceptor || this._defaultAcceptor
   this.leaseSeconds = opts.leaseSeconds || 12345;
+  this.hubUrl = opts.hubUrl
 
   // REQUIRED_PARAMS are without the "hub."-prefix
   this.REQUIRED_PARAMS = ['callback', 'mode', 'topic']
@@ -246,7 +248,19 @@ PubHub.prototype.distribute = function(topicUrl, contentType, content, callback)
         request.post(
             callbackUrl
           , {
-              headers: { 'content-type': contentType}
+              headers: {
+                  'content-type': contentType
+                , 'link': stringifyLink([
+                    {
+                        rel: 'hub'
+                      , href: self.hubUrl
+                    }
+                  , {
+                        rel: 'self'
+                      , href: topicUrl
+                    }
+                  ])
+              }
             , body: content
             }
           , finish

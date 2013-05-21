@@ -2,6 +2,7 @@ var qs = require('querystring')
 
   , endpoint = require('endpoint')
   , test = require('tap').test
+  , parseLink = require('http-link').parse
 
   , common = require('./common')
 
@@ -12,7 +13,10 @@ test('setup', function(t) {
         callback(null, true)
       }
   })
-  common.server.on('request', common.hub.dispatch.bind(common.hub))
+
+  common.server.on('request', function(req, res) {
+    common.hub.dispatch(req, res)
+  })
 })
 
 test('content distribution', function(t) {
@@ -46,11 +50,36 @@ test('content distribution', function(t) {
     t.plan(4)
 
     common.callbackServers.http.once('request', function(req, res) {
+      var links = parseLink(req.headers['link'])
+        , hubLink = links.filter(
+            function(link) {
+              return link.rel.toLowerCase() === 'hub'
+            }
+          )[0]
+        , selfLink = links.filter(
+            function(link) {
+              return link.rel.toLowerCase() === 'self'
+            }
+          )[0]
+
       t.equal(req.method, 'POST', 'should be a POST-method')
+
       t.equal(
           req.headers['content-type']
         , contentType
         , 'should have correct content-type header'
+      )
+
+      t.equal(
+          hubLink.href
+        , common.hub.hubUrl
+        , 'should have correct rel=hub link-header'
+      )
+
+      t.equal(
+          selfLink.href
+        , common.topicUrl
+        , 'should have correct rel=self link-header'
       )
 
       req.pipe(

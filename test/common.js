@@ -22,13 +22,14 @@ common.setup = function(t, opts) {
   if (!opts.db)
     opts.db = levelup('/does/not/matter', { db : dbFactory} )
 
-  common.hub = pubhub(opts)
-
   common.server = http.createServer().listen(0)
 
   common.server.once('listening', function() {
     var port = this.address().port
       , hubUrl = 'http://localhost:' + port
+
+    opts.hubUrl = hubUrl
+    common.hub = pubhub(opts)
 
     common.hubRequest = function(parameters, callback) {
       request(
