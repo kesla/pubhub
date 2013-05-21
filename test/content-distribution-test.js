@@ -47,7 +47,7 @@ test('content distribution', function(t) {
           , content: 'A mockup blog post in a JSON-format'
         })
 
-    t.plan(4)
+    t.plan(6)
 
     common.callbackServers.http.once('request', function(req, res) {
       var links = parseLink(req.headers['link'])
@@ -102,7 +102,5 @@ test('content distribution', function(t) {
 
   t.end()
 })
-
-test('secure content distribution', function(t){ t.end() })
 
 test('teardown', common.teardown)
