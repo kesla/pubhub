@@ -168,6 +168,7 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
                       self._addCallbackUrl(
                           params.topic
                         , params.callback
+                        , params.secret
                         , function(err) {
                           if (err) {
                             self._callbackUrls(params.topic, function(err, callbackUrls) {
@@ -188,7 +189,7 @@ PubHub.prototype.dispatch = function(req, res, errorHandler) {
   )
 }
 
-PubHub.prototype._addCallbackUrl = function(topicUrl, callbackUrl, callback) {
+PubHub.prototype._addCallbackUrl = function(topicUrl, callbackUrl, secret, callback) {
   var self = this
 
   // TODO: use something like level-update to update metadata regarding a
@@ -200,17 +201,22 @@ PubHub.prototype._addCallbackUrl = function(topicUrl, callbackUrl, callback) {
         callbackUrl
       , JSON.stringify({
             updatedAt: (new Date).toJSON().slice(0, 19)
+          , secret: secret
         })
       , callback
   )
 }
 
-PubHub.prototype._callbackUrls = function(topicUrl, callback) {
+PubHub.prototype._callbackData = function(topicUrl, callback) {
   var callbackUrls = []
 
   this.db.sublevel(topicUrl).createReadStream()
     .on('data', function(obj) {
-        callbackUrls.push(obj.key)
+        obj.value = JSON.parse(obj.value)
+        callbackUrls.push({
+            href: obj.key
+          , data: obj.value
+        })
       })
     .once('end', function() {
         callback(null, callbackUrls)
@@ -222,7 +228,7 @@ PubHub.prototype._callbackUrls = function(topicUrl, callback) {
 
 PubHub.prototype.distribute = function(topicUrl, contentType, content, callback) {
   var self = this
-  this._callbackUrls(topicUrl, function(err, callbackUrls) {
+  this._callbackData(topicUrl, function(err, callbackData) {
     var finished = false
       , finish = function(err) {
         console.log('calling finish')
@@ -243,24 +249,30 @@ PubHub.prototype.distribute = function(topicUrl, contentType, content, callback)
     if (err)
       callback(err)
     else {
-      active = callbackUrls.length
-      callbackUrls.forEach(function(callbackUrl) {
+      active = callbackData.length
+      callbackData.forEach(function(obj) {
+        var headers = {
+                'content-type': contentType
+              , 'link': stringifyLink([
+                  {
+                      rel: 'hub'
+                    , href: self.hubUrl
+                  }
+                , {
+                      rel: 'self'
+                    , href: topicUrl
+                  }
+                ])
+            }
+          , secret = obj.data.secret
+
+        if (secret)
+          headers['X-Hub-Signature'] = 'sha1=' + crypto.createHmac('sha1', secret).update(content).digest('hex')
+
         request.post(
-            callbackUrl
+            obj.href
           , {
-              headers: {
-                  'content-type': contentType
-                , 'link': stringifyLink([
-                    {
-                        rel: 'hub'
-                      , href: self.hubUrl
-                    }
-                  , {
-                        rel: 'self'
-                      , href: topicUrl
-                    }
-                  ])
-              }
+              headers: headers
             , body: content
             }
           , finish

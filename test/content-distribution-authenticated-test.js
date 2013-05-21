@@ -1,10 +1,13 @@
-var qs = require('querystring')
+var crypto = require('crypto')
+  , qs = require('querystring')
 
   , endpoint = require('endpoint')
   , test = require('tap').test
   , parseLink = require('http-link').parse
 
   , common = require('./common')
+
+  , SECRET = 'beep boop'
 
 test('setup', function(t) {
   common.setup(t, {
@@ -27,6 +30,7 @@ test('content distribution', function(t) {
             'hub.mode': 'subscribe'
           , 'hub.topic': common.topicUrl
           , 'hub.callback': common.callbackUrls.http
+          , 'hub.secret': SECRET
         }
       , function(req, res, data) {
           t.equal(res.statusCode, 202)
@@ -47,7 +51,7 @@ test('content distribution', function(t) {
           , content: 'A mockup blog post in a JSON-format'
         })
 
-    t.plan(7)
+    t.plan(8)
 
     common.callbackServers.http.once('request', function(req, res) {
       var links = parseLink(req.headers['link'])
@@ -82,14 +86,19 @@ test('content distribution', function(t) {
         , 'should have correct rel=self link-header'
       )
 
-      t.notOk(
+      t.ok(
           req.headers['x-hub-signature']
-        , 'should not have x-hub-signature header set'
+        , 'should have x-hub-signature header set'
       )
 
       req.pipe(
         endpoint(function(err, actualData) {
           t.equal(actualData.toString(), content, 'should have correct data')
+          t.equal(
+              req.headers['x-hub-signature']
+            , 'sha1=' + crypto.createHmac('sha1', SECRET).update(actualData).digest('hex')
+            , 'should have correct x-hub-signature header'
+          )
           res.end()
         })
       )
